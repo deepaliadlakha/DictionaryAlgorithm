@@ -29,4 +29,3 @@ for i=1:row_lim,
 end
 
 my_ksvd (data,9,21);
-

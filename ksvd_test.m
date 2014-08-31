@@ -1,16 +1,18 @@
-function [D,X]=ksvd_test
+function [D,X,errors]=ksvd_test
     clear all
     close all
     rng (0);
 
-
+    sigma=0.1;
     identity=eye(10);
-    data=zeros(64,10*100);
-    result = cellfun(@(x) imnoise(identity(:,randi(10)), 'gaussian', 0, 0.005), num2cell(data, 1), 'UniformOutput', false);
+    temp=repmat(linspace(1,10,10),100,1);
+    data=temp(:);
+    result = cellfun(@(x) imnoise(identity(:,x), 'gaussian', 0, sigma*sigma), num2cell(data, 1), 'UniformOutput', false);
     data=cell2mat(result);
 
     %data
+    %imagesc (data); colorbar; pause, close
 
-    [D,X]=my_ksvd (data,9,21);
+    [D,X,errors]=my_ksvd (data,10,sigma*sqrt(numel(data)),100); %Threshold not clear
 end
 
