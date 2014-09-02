@@ -39,23 +39,23 @@ function [D,coeff,errors]=ksvd_main(param)
  if(param==1)
      
    
-    [D,X,errors]=my_ksvd (data(:,logical(var_data)),10,135,100); %Threshold not clear take a clear patch
+    [D,X,errors]=my_ksvd (data(:,logical(var_data)),10,140,100); %Threshold not clear take a clear patch
     save('D.mat','D');
     
  else
     load('D.mat','D');
  end
  
-    %imagesc (D); colorbar; pause, close
+    imagesc (D); colorbar; pause, close
     D_new=ones(size(D,1),size(D,2)+1);
     D_new=D_new/size(D,1);
     D_new(:,2:end)=D;
     
    
     Y_new=zeros(size(data,1),size(data,2));
-    Y_new(:,:)=repmat(col_mean,size(Y_new,1),1);
+    Y_new(1,:)=col_mean;
     
-    %imagesc (D_new); colorbar; pause, close
+    imagesc (D_new); colorbar; pause, close
     
     coeff=sparsecode(D_new,data(:,logical(var_data)));
     
@@ -68,20 +68,20 @@ function [D,coeff,errors]=ksvd_main(param)
     all_ones=ones(p,p);
     for i=1:row_lim,
         for j=1:col_lim,
-           Y(i:i+p-1,j:j+p-1)=Y(i:i+p-1,j:j+p-1)+reshape(Y_new(:,count),p,p);
+           Y(i:i+p-1,j:j+p-1)=Y(i:i+p-1,j:j+p-1)+reshape(Y_new(:,count),p,p)
+           pause
            count_Y(i:i+p-1,j:j+p-1)=count_Y(i:i+p-1,j:j+p-1)+all_ones;
            count=count+1;
            
         end
     end
     
-   
     assert(min(count_Y(:))>0,'pain');
     
-    Y=Y./count_Y;
+    Y=Y/count_Y;
     
-    imshow(Y);
-    %pause;
+    imshow(double(Y)/255);
+    pause;
         
     
     

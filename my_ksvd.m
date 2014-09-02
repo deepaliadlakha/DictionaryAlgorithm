@@ -1,5 +1,6 @@
 function [D,X,errors]=my_ksvd(data,dictsize,thresh_norm,maxiter)
 
+
 % Initialising dictionary %
 
 n=size (data,1);
@@ -18,12 +19,14 @@ for i=1:dictsize-1,
     D_initial(:,i+1)=data(:,maxind);
 end
 
-
+%imagesc (D_initial); colorbar; pause, close
 [~,D] = kmeans(data',dictsize, 'start', D_initial'); %There is a problem what if data has less than k clusters
+'kmeans done'
 %size (D)
 %D = D + 0.2 * randn (size (D));
 %[~,D] = kmeans(data',dictsize);
 D=D';
+
 %imagesc(D);colorbar;
 %pause, close
 
@@ -33,6 +36,7 @@ D=D';
 
 % normalize the dictionary %
 D = normc(D);
+%imagesc (D); colorbar; pause, close
 
 
 % main loop %
@@ -45,11 +49,16 @@ for it_count=1:maxiter
     %X = cellfun(@(x) sparsecode_single(x,D), new_data, 'UniformOutput', false);
     
     j=1;
-    threshold = prctile (abs (X(:)), 90)
+    %hist(abs(X(:))); colorbar; pause
+    threshold = prctile (abs (X(:)), 85);
+    
     for j_count = 1:dictsize
+    %j
+    %pause
     [D,X,j] = optimize_atom(data,D,j,X,threshold);
     %X(j,data_indices) = X_j;
     end
+    dictsize=j-1;
     curr_error=norm(data-D*X,'fro')
     errors(1,it_count)=curr_error;
     %imagesc (D); colorbar; pause, close
@@ -60,8 +69,8 @@ for it_count=1:maxiter
 end
 
 errors=errors(1:it_count);
-%imagesc(D);colorbar;
-X = sparsecode(D,data);
+imagesc(D);colorbar;
+%X = sparsecode(D,data);
 %pause   
 end
 
@@ -77,10 +86,6 @@ if(size(data_indices,2)<0.05*size(X,2)) % threshold
     temp=linspace(1,size(D,2),size(D,2));
     temp=(temp~=j).*temp;
     'scarce data item'
-    %X(j,:)
-    size(D)
-    size(X)
-    pause
     D=D(:,logical(temp));
     X=X(logical(temp),:);
     j_new=j;
@@ -88,7 +93,6 @@ if(size(data_indices,2)<0.05*size(X,2)) % threshold
     
 end
 
-j_new=j+1;
 X_j = X(j,data_indices);
 smallX = X(:,data_indices);
 Dj = D(:,j);
@@ -102,14 +106,13 @@ if(max(tempDmat(1:j-1))>0.9) %vague threshold
     temp=linspace(1,size(D,2),size(D,2));
     temp=(temp~=j).*temp;
     'correlated data item'
-    size(D)
-    size(X)
-    pause
     D=D(:,logical(temp));
     X=X(logical(temp),:);
     j_new=j;
     return
 end
+
+j_new=j+1;
 
 end
 
