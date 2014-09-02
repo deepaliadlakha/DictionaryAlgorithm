@@ -17,11 +17,14 @@ function a=sparsecode(D,data)
        while(count<=k)
        
         %'-----------------------------------'
-        flagIndexZero = find (1-flag);
-        %Dunused = D (:,~logical(flag));
-        Dunused = D (:,flagIndexZero);
+        %flagIndexZero = find (1-flag);
+        
+        temp=linspace(1,k,k);
+        temp=temp(~logical(flag));
+        Dunused = D (:,~logical(flag));
+        %Dunused = D (:,flagIndexZero);
         [ ~, maxDotAtom ] = max (abs (Dunused' * R));
-        maxDotAtom = flagIndexZero (maxDotAtom);
+        maxDotAtom = temp(maxDotAtom);
       
         flag(1,maxDotAtom)=1;
         a(maxDotAtom,i)=D(:,maxDotAtom)' * R;

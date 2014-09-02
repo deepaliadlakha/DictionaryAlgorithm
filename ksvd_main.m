@@ -1,9 +1,9 @@
-function [D,coeff,errors]=ksvd_main(param)
+function [D,coeff,errors]=ksvd_main(param,dictsize)
 
     close all
     rng (0);
 
-    [X, ~] = imread('barbara.png');
+    [X, ~] = imread('face1.jpg');
     X=single(X);
     X=X/255;
 
@@ -28,8 +28,8 @@ function [D,coeff,errors]=ksvd_main(param)
     end
 
     mean_data=mean(data);
-    col_mean=mean_data;
     mean_data=repmat(mean_data,size(data,1),1);
+    data_later=data;
     data=data-mean_data;
     var_data=var(data);
     var_data=var_data.*(var_data>0.02); %based on data
@@ -39,11 +39,13 @@ function [D,coeff,errors]=ksvd_main(param)
  if(param==1)
      
    
-    [D,X,errors]=my_ksvd (data(:,logical(var_data)),10,135,100); %Threshold not clear take a clear patch
+    [D,~,errors]=my_ksvd (data(:,logical(var_data)),dictsize,20,10); %Threshold not clear take a clear patch
     save('D.mat','D');
+    'matrix saved'
     
  else
     load('D.mat','D');
+    'matrix loaded'
  end
  
     %imagesc (D); colorbar; pause, close
@@ -52,15 +54,17 @@ function [D,coeff,errors]=ksvd_main(param)
     D_new(:,2:end)=D;
     
    
-    Y_new=zeros(size(data,1),size(data,2));
-    Y_new(:,:)=repmat(col_mean,size(Y_new,1),1);
+    
+    Y_new=mean_data;
     
     %imagesc (D_new); colorbar; pause, close
     
-    coeff=sparsecode(D_new,data(:,logical(var_data)));
+    coeff=sparsecode(D_new,data_later(:,logical(var_data)));
     
     'sparsecoding done'
     Y_new(:,logical(var_data))=D_new*coeff;
+    
+    
     count=1;
     
     Y=zeros(size(X,1),size(X,2));
@@ -68,12 +72,26 @@ function [D,coeff,errors]=ksvd_main(param)
     all_ones=ones(p,p);
     for i=1:row_lim,
         for j=1:col_lim,
+           
+           
            Y(i:i+p-1,j:j+p-1)=Y(i:i+p-1,j:j+p-1)+reshape(Y_new(:,count),p,p);
            count_Y(i:i+p-1,j:j+p-1)=count_Y(i:i+p-1,j:j+p-1)+all_ones;
            count=count+1;
            
         end
     end
+    
+    
+    dictionaryPic=ones(p*size(D,2),p);
+    
+    'size of dictionary is'
+    size(D,2)
+    for i=1:size(D,2),
+        dictionaryPic((i-1)*p+1:i*p,:)=reshape(D(:,i),p,p);
+    end
+           
+    imshow(dictionaryPic);
+    pause
     
    
     assert(min(count_Y(:))>0,'pain');
