@@ -1,13 +1,20 @@
-function [D,coeff,errors]=ksvd_main(param,dictsize)
+function [D,coeff,errors]=ksvd_main(param,dictsize,maxIter,numDisplay)
 
     close all
     rng (0);
 
-    [X, ~] = imread('face1.jpg');
+    [X, ~] = imread('barbara.png');
     X=single(X);
     X=X/255;
+    
+    X=X(1:200,1:200);
+    %imshow(X);pause;
+   
+    
+    
 
     p=8;
+   
 
     row_lim=size(X,1);
     col_lim=size(X,2);
@@ -32,75 +39,97 @@ function [D,coeff,errors]=ksvd_main(param,dictsize)
     data_later=data;
     data=data-mean_data;
     var_data=var(data);
-    var_data=var_data.*(var_data>0.02); %based on data
+    var_data=var_data.*(var_data>0.01); %based on data
+
+    dataSelected = data(:,logical(var_data));
     
-   
- 
  if(param==1)
      
-   
-    [D,~,errors]=my_ksvd (data(:,logical(var_data)),dictsize,20,10); %Threshold not clear take a clear patch
+    
+    [D,~,errors]=my_ksvd (dataSelected ,dictsize,2,maxIter,p,numDisplay); %Threshold not clear take a clear patch
     save('D.mat','D');
+    D_new=ones(size(D,1),size(D,2)+1);
+    D_new=D_new/p;
+    D_new(:,2:end)=D;
+    
     'matrix saved'
+    coeff=sparsecode(D_new,data_later);
+    save('coeff.mat','coeff');
     
  else
     load('D.mat','D');
+    D_new=ones(size(D,1),size(D,2)+1);
+    D_new=D_new/p;
+    D_new(:,2:end)=D;
+    load('coeff.mat','coeff');
     'matrix loaded'
  end
  
     %imagesc (D); colorbar; pause, close
-    D_new=ones(size(D,1),size(D,2)+1);
-    D_new=D_new/size(D,1);
-    D_new(:,2:end)=D;
+    
+    numDisplay=5;
+    display_dictionary(D,p,numDisplay,size(D,2));
+    
     
    
     
-    Y_new=mean_data;
+    %Y_new=mean_data;
+    %Y_new=zeros(size(mean_data,1),size(mean_data,2));
+    
+    
+   
     
     %imagesc (D_new); colorbar; pause, close
     
-    coeff=sparsecode(D_new,data_later(:,logical(var_data)));
+   
+    
+    
     
     'sparsecoding done'
-    Y_new(:,logical(var_data))=D_new*coeff;
+    Y_new=D_new*coeff;
+   
+   
     
     
-    count=1;
+%     norm(dataSelected-D_new*coeff,'fro')
+%     norm(dataSelected(:,1:5:end)-D_new*coeff(:,1:5:end),'fro')
+%     imagesc (coeff); colorbar; pause, close
     
+    
+%     count=1; 
+%     Y=zeros(size(X,1),size(X,2));
+%     count_Y=zeros(size(X,1),size(X,2));
+%     all_ones=ones(p,p);
+%     for i=1:row_lim,
+%         for j=1:col_lim,
+%            Y(i:i+p-1,j:j+p-1)=Y(i:i+p-1,j:j+p-1)+reshape(Y_new(:,count),p,p);
+%            count_Y(i:i+p-1,j:j+p-1)=count_Y(i:i+p-1,j:j+p-1)+all_ones;
+%            count=count+1;
+%         end
+%     end
+    
+    
+    %Y=zeros(size(X,1),size(X,2));
     Y=zeros(size(X,1),size(X,2));
-    count_Y=zeros(size(X,1),size(X,2));
-    all_ones=ones(p,p);
+    count=1;
     for i=1:row_lim,
         for j=1:col_lim,
+            
            
-           
-           Y(i:i+p-1,j:j+p-1)=Y(i:i+p-1,j:j+p-1)+reshape(Y_new(:,count),p,p);
-           count_Y(i:i+p-1,j:j+p-1)=count_Y(i:i+p-1,j:j+p-1)+all_ones;
+           pCrosspMat=reshape(Y_new(:,count),p,p);
+           Y(i+4,j+4)=pCrosspMat(4,4);
            count=count+1;
-           
         end
     end
-    
-    
-    dictionaryPic=ones(p*size(D,2),p);
-    
-    'size of dictionary is'
-    size(D,2)
-    for i=1:size(D,2),
-        dictionaryPic((i-1)*p+1:i*p,:)=reshape(D(:,i),p,p);
-    end
-           
-    imshow(dictionaryPic);
-    pause
+   
     
    
-    assert(min(count_Y(:))>0,'pain');
+    %assert(min(count_Y(:))>0,'pain');
     
-    Y=Y./count_Y;
+    %Y=Y./count_Y;
     
-    imshow(Y);
-    %pause;
-        
-    
-    
+    imshow(Y); pause, close
+    %imshow(X(:,:,1)-Y); pause, close
+    %imagesc (X(:,:,1)-Y); colorbar; axis equal tight; pause, close
+   
 end

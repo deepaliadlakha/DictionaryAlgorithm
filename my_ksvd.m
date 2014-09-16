@@ -1,77 +1,98 @@
-function [D,X,errors]=my_ksvd(data,dictsize,thresh_norm,maxiter)
+function [D,X,errors]=my_ksvd(data,dictsize,thresh_norm,maxiter,p,numDisplay)
 
+    n=size (data,1);
+    m=size (data,2);
 
-% Initialising dictionary %
+    %%%%%%%%%%%%%%%%%%%%%%%% Farthest Point Clustering %%%%%%%%%%%%%%%%%%%%%%%
+    D_initial = zeros (n, dictsize);
+    D_initial(:,1)= data(:,randi(m));
+    errors=nan(1,maxiter);
 
-n=size (data,1);
-m=size (data,2);
-D_initial = zeros (n, dictsize);
-D_initial(:,1)= data(:,randi(m));
-errors=nan(1,maxiter);
+    dist=zeros(dictsize,m);
 
-
-dist=zeros(dictsize,m);
-
-for i=1:dictsize-1,
-    diff=data-D_initial(:,i*ones(1,m));
-    dist(i,:)=sum(diff.^2);  
-    [~, maxind]=max(min(dist(1:i,:)));
-    D_initial(:,i+1)=data(:,maxind);
-end
-
-%imagesc (D_initial); colorbar; pause, close
-[~,D] = kmeans(data',dictsize, 'start', D_initial'); %There is a problem what if data has less than k clusters
-'kmeans done'
-%size (D)
-%D = D + 0.2 * randn (size (D));
-%[~,D] = kmeans(data',dictsize);
-D=D';
-
-%imagesc(D);colorbar;
-%pause, close
-
-
-
-%D = eye (size (data,1), dictsize);
-
-% normalize the dictionary %
-D = normc(D);
-%imagesc (D); colorbar; pause, close
-
-
-% main loop %
-for it_count=1:maxiter
+    for i=1:dictsize-1,
+        diff=data-D_initial(:,i*ones(1,m));
+        dist(i,:)=sum(diff.^2);  
+        [~, maxind]=max(min(dist(1:i,:)));
+        D_initial(:,i+1)=data(:,maxind);
+    end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Kmeans %%%%%%%%%%%%%%%%
+    [~,D] = kmeans(data',dictsize, 'start', D_initial'); 
+    D=D';
+    D = normc(D);
+    'kmeans done';
     
-    '-----------------------------------'
-    X = sparsecode(D,data);
+    save('D_kmeans.mat','D');
+    'matrix kmeans saved'
     
-    %new_data=num2cell(data,1);
-    %X = cellfun(@(x) sparsecode_single(x,D), new_data, 'UniformOutput', false);
+    %kmeansD=D;
+    %kmeansdictsize=dictsize;
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Displaying Initial Dictionary %%%%%%%%%%%%%%
+
     
-    j=1;
-    %hist(abs(X(:))); colorbar; pause
-    threshold = prctile (abs (X(:)), 85);
     
-    for j_count = 1:dictsize
-    %j
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Main loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    for it_count=1:maxiter
+
+        '-----------------------------------';
+        X = sparsecode(D,data);
+        curr_error=norm(data-D*X,'fro');
+        errors(1,it_count)=curr_error;
+        
+%         if curr_error<=thresh_norm
+%             break;
+%         end
+
+        threshold = prctile (abs (X(:)), 85);
+        
+        %'iter----------'
+        %refD=D;
+
+        for j_count = 1:dictsize
+            [D,X,reset_flag] = optimize_atom(data,D,j_count,X,threshold);
+            if(reset_flag==true)
+                
+               
+                %subplot(1,2,1), display_dictionary(refD,p,numDisplay,dictsize);
+                
+               
+                %D(:,j_count)=data(:,maxi);
+                
+                
+                
+                
+                dictsize=dictsize-1;
+                %subplot(1,2,2), display_dictionary(D,p,numDisplay,dictsize);
+                
+               
+                %pause;
+               
+                break;
+            end
+             
+             %temp=refD(:,j_count)-D(:,j_count)
+             %sum(temp.^2)
+             
+             
+%               subplot(1,2,1), display_dictionary(refD,p,numDisplay,dictsize);
+%               subplot(1,2,2), display_dictionary(D,p,numDisplay,dictsize);
+%               pause;
+        end
+      
+        
+
+    end
+    
+
+    errors=errors(1:it_count);
+    %subplot(1,2,1), display_dictionary(kmeansD,p,numDisplay,kmeansdictsize);
+    %subplot(1,2,2), display_dictionary(D,p,numDisplay,dictsize);
     %pause
-    [D,X,j] = optimize_atom(data,D,j,X,threshold);
-    %X(j,data_indices) = X_j;
-    end
-    dictsize=j-1;
-    curr_error=norm(data-D*X,'fro')
-    errors(1,it_count)=curr_error;
-    %imagesc (D); colorbar; pause, close
-    if curr_error<=thresh_norm
-        break;
-    end
+    
+    
+    
 
-end
-
-errors=errors(1:it_count);
-imagesc(D);colorbar;
-%X = sparsecode(D,data);
-%pause   
 end
 
 
@@ -79,40 +100,59 @@ end
 
 %helper functions
 
-function [D,X,j_new]=optimize_atom(Y,D,j,X,threshold)
+function [D,X,reset_flag]=optimize_atom(Y,D,j,X,threshold)
 
-data_indices = find(abs(X(j,:)) > threshold); % thresholds
-if(size(data_indices,2)<0.05*size(X,2)) % threshold
-    temp=linspace(1,size(D,2),size(D,2));
-    temp=(temp~=j).*temp;
-    'scarce data item'
-    D=D(:,logical(temp));
-    X=X(logical(temp),:);
-    j_new=j;
-    return
+    data_indices = find(abs(X(j,:)) > threshold); % thresholds
+    reset_flag=false;
+   
     
+    if(size(data_indices,2)<0.05*size(X,2)) % threshold
+
+    %     temp=Y-D*X+D(:,j)*X(j,:);
+    %     temp=diag(temp'*temp);
+    %     [~,maxIndex]=max(temp(:));
+    %     D(:,j)=Y(:,maxIndex);
+
+        temp=linspace(1,size(D,2),size(D,2));
+        temp=(temp~=j).*temp;
+        %'scarce data item'
+        D=D(:,logical(temp));
+        reset_flag=true;
+        return
+
+    end
+
+    X_j = X(j,data_indices);
+    smallX = X(:,data_indices);
+    Dj = D(:,j);
+    [D(:,j),s,X_j] = svds(Y(:,data_indices) - D*smallX + Dj*X_j, 1);
+    X(j,data_indices) = s*X_j;
+    
+    tempDmat=D(:,j)'*D;
+    
+    [maxValue,~]=max(abs(tempDmat(1:j-1)));
+    
+    
+    if(j>1 && maxValue>0.9) %vague threshold
+        
+%         imagesc (reshape(D(:,j),8,8)); colorbar; axis equal tight; pause, close
+%         imagesc (reshape(D(:,maxIndex),8,8)); colorbar; axis equal tight; pause, close
+        
+        
+    %     temp=Y-D*X+D(:,j)*X(j,:);
+    %     temp=diag(temp'*temp);
+    %     [~,maxIndex]=max(temp(:));
+    %     D(:,j)=Y(:,maxIndex);
+        temp=linspace(1,size(D,2),size(D,2));
+        temp=(temp~=j).*temp;
+        %'correlated data item'
+        D=D(:,logical(temp));
+        reset_flag=true;
+        return
+    end
+
+
 end
 
-X_j = X(j,data_indices);
-smallX = X(:,data_indices);
-Dj = D(:,j);
-[D(:,j),s,X_j] = svds(Y(:,data_indices) - D*smallX + Dj*X_j, 1);
-X(j,data_indices) = s*X_j;
 
-new_D=num2cell(D,1);
-tempD = cellfun(@(x) corr(x,D(:,j)), new_D, 'UniformOutput', false);
-tempDmat=cell2mat(tempD);
-if(max(tempDmat(1:j-1))>0.9) %vague threshold
-    temp=linspace(1,size(D,2),size(D,2));
-    temp=(temp~=j).*temp;
-    'correlated data item'
-    D=D(:,logical(temp));
-    X=X(logical(temp),:);
-    j_new=j;
-    return
-end
-
-j_new=j+1;
-
-end
 
