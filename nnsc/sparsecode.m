@@ -1,7 +1,6 @@
 
-function a=sparsecode(D,data,targetSparsity)
-
-%inverse thing changed to pinv
+function a=sparsecode(D,data)
+   
     
     m = size(data,2); %m is the no. of training examples
     n = size(D,1); %n is the dimension of the vector space
@@ -15,8 +14,7 @@ function a=sparsecode(D,data,targetSparsity)
        count = 1;
        flag = zeros(1,k,'uint8');
       
-       %while(count<=min(k/3,15))
-       while(count<=targetSparsity)
+       while(count<=k)
        
         %'-----------------------------------'
         %flagIndexZero = find (1-flag);
@@ -37,8 +35,7 @@ function a=sparsecode(D,data,targetSparsity)
         %imagesc (phi_current); colorbar;
         intermMatrix=phi_current'*phi_current;
         %pause
-        %P=phi_current*(intermMatrix \ phi_current');
-        P=phi_current*pinv(intermMatrix)*phi_current';
+        P=phi_current*(intermMatrix \ phi_current');
         count=count+1;
         R=(identity-P)*R;
        

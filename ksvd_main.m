@@ -1,20 +1,14 @@
-function [D,coeff,errors]=ksvd_main(param,dictsize,maxIter,numDisplay)
+function [Y,D,coeff,rmse_image]=ksvd_main(param,dictsize,maxIter,numDisplay,p)
 
     close all
     rng (0);
 
+    numatoms=dictsize;
     [X, ~] = imread('barbara.png');
     X=single(X);
     X=X/255;
     
     X=X(1:200,1:200);
-    %imshow(X);pause;
-   
-    
-    
-
-    p=8;
-   
 
     row_lim=size(X,1);
     col_lim=size(X,2);
@@ -46,56 +40,36 @@ function [D,coeff,errors]=ksvd_main(param,dictsize,maxIter,numDisplay)
  if(param==1)
      
     
-    [D,~,errors]=my_ksvd (dataSelected ,dictsize,2,maxIter,p,numDisplay); %Threshold not clear take a clear patch
-    save('D.mat','D');
+    [D,~,errors]=my_ksvd (dataSelected,dictsize,maxIter,p,numDisplay); %Threshold not clear take a clear patch
+    filename=strcat('./output/D_',int2str(dictsize),'.mat');
+    save(filename,'D');
     D_new=ones(size(D,1),size(D,2)+1);
     D_new=D_new/p;
     D_new(:,2:end)=D;
-    
-    'matrix saved'
     coeff=sparsecode(D_new,data_later);
-    save('coeff.mat','coeff');
+    filename=strcat('./output/coeff_',int2str(dictsize),'.mat');
+    save(filename,'coeff');
+    'matrix saved'
     
  else
-    load('D.mat','D');
+    filename=strcat('./output/D_',int2str(dictsize),'.mat');
+    load(filename,'D');
     D_new=ones(size(D,1),size(D,2)+1);
     D_new=D_new/p;
     D_new(:,2:end)=D;
-    load('coeff.mat','coeff');
+    filename=strcat('./output/coeff_',int2str(dictsize),'.mat');
+    load(filename,'coeff');
     'matrix loaded'
  end
  
-    %imagesc (D); colorbar; pause, close
+    %display_dictionary(D,p,numDisplay,size(D,2));
+
+    Y_new=D_new*coeff;   
     
-    numDisplay=5;
-    display_dictionary(D,p,numDisplay,size(D,2));
-    
-    
-   
-    
-    %Y_new=mean_data;
-    %Y_new=zeros(size(mean_data,1),size(mean_data,2));
-    
-    
-   
-    
-    %imagesc (D_new); colorbar; pause, close
-    
-   
-    
-    
-    
-    'sparsecoding done'
-    Y_new=D_new*coeff;
-   
-   
-    
-    
+%%%%%%%%%%%%%%% Averaging over the pixels %%%%%%%%%%%%%%%%%%%%%%%%%   
 %     norm(dataSelected-D_new*coeff,'fro')
 %     norm(dataSelected(:,1:5:end)-D_new*coeff(:,1:5:end),'fro')
-%     imagesc (coeff); colorbar; pause, close
-    
-    
+%     imagesc (coeff); colorbar; pause, close    
 %     count=1; 
 %     Y=zeros(size(X,1),size(X,2));
 %     count_Y=zeros(size(X,1),size(X,2));
@@ -109,7 +83,6 @@ function [D,coeff,errors]=ksvd_main(param,dictsize,maxIter,numDisplay)
 %     end
     
     
-    %Y=zeros(size(X,1),size(X,2));
     Y=zeros(size(X,1),size(X,2));
     count=1;
     for i=1:row_lim,
@@ -121,15 +94,16 @@ function [D,coeff,errors]=ksvd_main(param,dictsize,maxIter,numDisplay)
            count=count+1;
         end
     end
-   
     
-   
-    %assert(min(count_Y(:))>0,'pain');
+    rmse_image=(Y(:)-X(:)).^2;
+    rmse_image=sqrt(sum(rmse_image)/(size(Y,1)*size(Y,2)))
+    filename=strcat('./output/outpimage_',int2str(numatoms),'.png');
+    save_image(Y, filename, 0);
     
-    %Y=Y./count_Y;
+    display_dictionary(D,p,numDisplay,size(D,2));
+    %imshow(Y);
+    %pause
     
-    imshow(Y); pause, close
-    %imshow(X(:,:,1)-Y); pause, close
-    %imagesc (X(:,:,1)-Y); colorbar; axis equal tight; pause, close
+    
    
 end

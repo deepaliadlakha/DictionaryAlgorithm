@@ -1,4 +1,4 @@
-function [D,X,errors]=my_ksvd(data,dictsize,thresh_norm,maxiter,p,numDisplay)
+function [D,X,errors,D_kmeans]=my_ksvd(data,dictsize,maxiter,p,numDisplay,sparseParam,targetSparsity)
 
     n=size (data,1);
     m=size (data,2);
@@ -20,9 +20,11 @@ function [D,X,errors]=my_ksvd(data,dictsize,thresh_norm,maxiter,p,numDisplay)
     [~,D] = kmeans(data',dictsize, 'start', D_initial'); 
     D=D';
     D = normc(D);
+    D_kmeans=D;
     'kmeans done';
     
-    save('D_kmeans.mat','D');
+    filename=strcat('./output/D_kmeans_',int2str(dictsize),'.mat');
+    save(filename,'D');
     'matrix kmeans saved'
     
     %kmeansD=D;
@@ -35,64 +37,49 @@ function [D,X,errors]=my_ksvd(data,dictsize,thresh_norm,maxiter,p,numDisplay)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Main loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     for it_count=1:maxiter
 
-        '-----------------------------------';
-        X = sparsecode(D,data);
-        curr_error=norm(data-D*X,'fro');
-        errors(1,it_count)=curr_error;
+        %if (sparseParam)
+            X = sparsecode(D,data,targetSparsity);
+        %else
+            X1 = ompCholesky(D,data, targetSparsity);
+        %end
         
-%         if curr_error<=thresh_norm
-%             break;
-%         end
+%             X(:,1)'
+%             X1(:,1)'
+%             pause
+                   
+%         imagesc(data-D*X);colorbar;pause;close;
+        
+        residual = data(:,1) - D * X(:,1);
+        residual1 = data(:,1) - D * X1(:,1);
+        residual (:,1)'
+        residual1 (:,1)'
+        pause
+%         '------------------------'
+%         data (:,1)'
+%         D
+%         X (:,1)'
+        residual (:,1)'
+        curr_error = sqrt (mean (residual(:).^2))
+        curr_error = sqrt (mean (residual1(:).^2))
+        
+        errors(1,it_count)=curr_error;
 
         threshold = prctile (abs (X(:)), 85);
-        
-        %'iter----------'
-        %refD=D;
-
+       
         for j_count = 1:dictsize
             [D,X,reset_flag] = optimize_atom(data,D,j_count,X,threshold);
             if(reset_flag==true)
-                
-               
-                %subplot(1,2,1), display_dictionary(refD,p,numDisplay,dictsize);
-                
-               
-                %D(:,j_count)=data(:,maxi);
-                
-                
-                
-                
                 dictsize=dictsize-1;
-                %subplot(1,2,2), display_dictionary(D,p,numDisplay,dictsize);
-                
-               
-                %pause;
-               
+                it_count=it_count-1;
                 break;
             end
-             
-             %temp=refD(:,j_count)-D(:,j_count)
-             %sum(temp.^2)
-             
-             
-%               subplot(1,2,1), display_dictionary(refD,p,numDisplay,dictsize);
-%               subplot(1,2,2), display_dictionary(D,p,numDisplay,dictsize);
-%               pause;
+           
         end
-      
-        
-
+     
     end
-    
-
+  
     errors=errors(1:it_count);
-    %subplot(1,2,1), display_dictionary(kmeansD,p,numDisplay,kmeansdictsize);
-    %subplot(1,2,2), display_dictionary(D,p,numDisplay,dictsize);
-    %pause
-    
-    
-    
-
+ 
 end
 
 
@@ -107,15 +94,9 @@ function [D,X,reset_flag]=optimize_atom(Y,D,j,X,threshold)
    
     
     if(size(data_indices,2)<0.05*size(X,2)) % threshold
-
-    %     temp=Y-D*X+D(:,j)*X(j,:);
-    %     temp=diag(temp'*temp);
-    %     [~,maxIndex]=max(temp(:));
-    %     D(:,j)=Y(:,maxIndex);
-
         temp=linspace(1,size(D,2),size(D,2));
         temp=(temp~=j).*temp;
-        %'scarce data item'
+        'scarce data item';
         D=D(:,logical(temp));
         reset_flag=true;
         return
@@ -134,18 +115,9 @@ function [D,X,reset_flag]=optimize_atom(Y,D,j,X,threshold)
     
     
     if(j>1 && maxValue>0.9) %vague threshold
-        
-%         imagesc (reshape(D(:,j),8,8)); colorbar; axis equal tight; pause, close
-%         imagesc (reshape(D(:,maxIndex),8,8)); colorbar; axis equal tight; pause, close
-        
-        
-    %     temp=Y-D*X+D(:,j)*X(j,:);
-    %     temp=diag(temp'*temp);
-    %     [~,maxIndex]=max(temp(:));
-    %     D(:,j)=Y(:,maxIndex);
         temp=linspace(1,size(D,2),size(D,2));
         temp=(temp~=j).*temp;
-        %'correlated data item'
+        'correlated data item';
         D=D(:,logical(temp));
         reset_flag=true;
         return
