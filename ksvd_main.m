@@ -1,4 +1,4 @@
-function [Y,D,coeff,rmse_image]=ksvd_main(param,dictsize,maxIter,numDisplay,p)
+function [Y,D,coeff,rmse_image]=ksvd_main(param,dictsize,maxIter,numDisplay,p,sparseParam,targetSparsity)
 
     close all
     rng (0);
@@ -8,7 +8,7 @@ function [Y,D,coeff,rmse_image]=ksvd_main(param,dictsize,maxIter,numDisplay,p)
     X=single(X);
     X=X/255;
     
-    X=X(1:200,1:200);
+%     X=X(1:200,1:200);
 
     row_lim=size(X,1);
     col_lim=size(X,2);
@@ -40,13 +40,20 @@ function [Y,D,coeff,rmse_image]=ksvd_main(param,dictsize,maxIter,numDisplay,p)
  if(param==1)
      
     
-    [D,~,errors]=my_ksvd (dataSelected,dictsize,maxIter,p,numDisplay); %Threshold not clear take a clear patch
+    [D,~,~]=my_ksvd (dataSelected,dictsize,maxIter,p,numDisplay,sparseParam,targetSparsity); %Threshold not clear take a clear patch
     filename=strcat('./output/D_',int2str(dictsize),'.mat');
     save(filename,'D');
     D_new=ones(size(D,1),size(D,2)+1);
     D_new=D_new/p;
     D_new(:,2:end)=D;
-    coeff=sparsecode(D_new,data_later);
+    
+    if (sparseParam)
+        coeff=sparsecode(D_new,data_later,targetSparsity);
+    else
+        coeff=ompCholesky(D_new,data_later,targetSparsity);
+    end
+        
+    
     filename=strcat('./output/coeff_',int2str(dictsize),'.mat');
     save(filename,'coeff');
     'matrix saved'

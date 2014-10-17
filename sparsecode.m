@@ -16,7 +16,7 @@ function a=sparsecode(D,data,targetSparsity)
        flag = zeros(1,k,'uint8');
       
        %while(count<=min(k/3,15))
-       while(count<=targetSparsity)
+       while(count<=min(targetSparsity,k))
        
         %'-----------------------------------'
         %flagIndexZero = find (1-flag);
@@ -37,8 +37,8 @@ function a=sparsecode(D,data,targetSparsity)
         %imagesc (phi_current); colorbar;
         intermMatrix=phi_current'*phi_current;
         %pause
-        %P=phi_current*(intermMatrix \ phi_current');
-        P=phi_current*pinv(intermMatrix)*phi_current';
+        P=phi_current*(intermMatrix \ phi_current');
+        %P=phi_current*pinv(intermMatrix)*phi_current';
         count=count+1;
         R=(identity-P)*R;
        

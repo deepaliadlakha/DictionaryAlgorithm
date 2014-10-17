@@ -37,35 +37,29 @@ function [D,X,errors,D_kmeans]=my_ksvd(data,dictsize,maxiter,p,numDisplay,sparse
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Main loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     for it_count=1:maxiter
 
-        %if (sparseParam)
-            X = sparsecode(D,data,targetSparsity);
-        %else
-            X1 = ompCholesky(D,data, targetSparsity);
-        %end
+        if (sparseParam)
+            X = sparsecodeNew(D,data,targetSparsity);
+         else
+            X = ompCholesky(D,data,targetSparsity);
+        end
         
-%             X(:,1)'
-%             X1(:,1)'
-%             pause
-                   
-%         imagesc(data-D*X);colorbar;pause;close;
-        
-        residual = data(:,1) - D * X(:,1);
-        residual1 = data(:,1) - D * X1(:,1);
-        residual (:,1)'
-        residual1 (:,1)'
-        pause
-%         '------------------------'
-%         data (:,1)'
-%         D
-%         X (:,1)'
-        residual (:,1)'
-        curr_error = sqrt (mean (residual(:).^2))
-        curr_error = sqrt (mean (residual1(:).^2))
-        
-        errors(1,it_count)=curr_error;
+% res=data(:,1)-D*X(:,1);
+% res'
+% res=data(:,1)-D*X1(:,1);
+% res'
+% 'residual'
+% res=X(:,1);
+% res'
+% res=X1(:,1);
+% res'
+% pause
 
+        
+        residual = data - D * X;
+        curr_error = sqrt (mean (residual(:).^2))
+        errors(1,it_count)=curr_error;
         threshold = prctile (abs (X(:)), 85);
-       
+     
         for j_count = 1:dictsize
             [D,X,reset_flag] = optimize_atom(data,D,j_count,X,threshold);
             if(reset_flag==true)

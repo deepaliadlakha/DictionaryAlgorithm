@@ -22,7 +22,7 @@ function a=ompCholesky(D,data,targetSparsity)
        
        
       
-       while(count<=targetSparsity)
+       while(count<=min(targetSparsity,k))
        
         %'-----------------------------------'
         %flagIndexZero = find (1-flag);
@@ -47,9 +47,6 @@ function a=ompCholesky(D,data,targetSparsity)
         I=[I maxDotAtom];
         gamma(I,1)=L(1:count,1:count)'\(L(1:count,1:count)\alpha(I,1));
         R=double(x)-double(D(:,I)*gamma(I,1));
-       
-        
-   
         count=count+1;
 
        end
