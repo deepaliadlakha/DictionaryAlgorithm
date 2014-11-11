@@ -1,24 +1,22 @@
-function mydriver(param,minnumatoms,maxnumatoms)
-addpath('./common/export_fig/')
-addpath('./common/')
+function [y_plot]=mydriver(param,minnumatoms,maxnumatoms)
+addpath('../common/export_fig/')
+addpath('../common/')
+addpath('../')
 
-
-x_plot=zeros(1,maxnumatoms-minnumatoms+1);
 y_plot=zeros(1,maxnumatoms-minnumatoms+1);
 
 for i=minnumatoms:maxnumatoms
-    [~,~,~,rmse_image]=ksvd_main(param,5*i,5,5,8);
-    
-    
-    
-    
-    x_plot(1,i)=5*i;
-    y_plot(1,i)=rmse_image;
+    [~,rmse_image]=nnsc_all_images(param,5*i,50,1,8,0);
+   
+    if(i==minnumatoms)
+        y_plot=rmse_image';
+    else
+        y_plot=[y_plot rmse_image'];
+    end
    
 end
 
 
-scatter(x_plot,y_plot);
-pause;
+
 
 

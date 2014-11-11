@@ -1,6 +1,5 @@
-function [Y,D,coeff,rmse_image]=nnsc_main(param,dictsize,maxIter,numDisplay,p,mu,lambda)
+function [rmse_image]=nnsc_main(param,dictsize,maxIter,numDisplay,p,mu,lambda)
 
-    addpath('../common/export_fig/')
     addpath('../common/')
 
     %nnsc_main(1,10,5,1,8,0.1,0.1)
@@ -10,10 +9,10 @@ function [Y,D,coeff,rmse_image]=nnsc_main(param,dictsize,maxIter,numDisplay,p,mu
 
     numatoms=dictsize;
     [X, ~] = imread('../barbara.png');
-    X=single(X);
-    X=X/255;
+    %X=single(X);
+    X=mat2gray(X);
     
-    X=X(1:200,1:200);
+    %X=X(1:200,1:200);
 
     row_lim=size(X,1);
     col_lim=size(X,2);
@@ -52,6 +51,7 @@ function [Y,D,coeff,rmse_image]=nnsc_main(param,dictsize,maxIter,numDisplay,p,mu
         dataSelected(:,col)=dataSelected(:,col)-minInt(1,col);
 
     end
+    dataSelected = datasample(dataSelected,10000,2,'Replace',false);
    
     
    

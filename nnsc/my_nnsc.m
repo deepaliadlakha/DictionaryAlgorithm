@@ -1,11 +1,12 @@
 
-function [A,S,errors,A_kmeans]=my_nnsc(data,dictsize,maxiter,p,numDisplay,mu,lambda)
-
+function [A,S,errors,A_kmeans]=my_nnsc(data,dictsize,maxiter,p,numDisplay,lambda)
+    
 
     n=size (data,1);
     m=size (data,2);
     %%%%%%%%%%%%%%%%%%%%%%%% Farthest Point Clustering %%%%%%%%%%%%%%%%%%%%%%%
     D_initial = zeros (n, dictsize);
+    rng(0);
     D_initial(:,1)= data(:,randi(m));
     errors=nan(1,maxiter);
 
@@ -13,10 +14,17 @@ function [A,S,errors,A_kmeans]=my_nnsc(data,dictsize,maxiter,p,numDisplay,mu,lam
 
     for i=1:dictsize-1,
         diff=data-D_initial(:,i*ones(1,m));
-        dist(i,:)=sum(diff.^2);  
-        [~, maxind]=max(min(dist(1:i,:)));
+        dist(i,:)=sum(diff.^2);
+        
+        if i==1
+            [~, maxind]=max(dist(1,:));
+        else
+            [~, maxind]=max(min(dist(1:i,:)));
+        end
         D_initial(:,i+1)=data(:,maxind);
     end
+    
+    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Kmeans %%%%%%%%%%%%%%%%
     [~,D] = kmeans(data',dictsize, 'start', D_initial'); 
     D=D';
@@ -27,21 +35,27 @@ function [A,S,errors,A_kmeans]=my_nnsc(data,dictsize,maxiter,p,numDisplay,mu,lam
     
     filename=strcat('./output/D_kmeans_',int2str(dictsize),'.mat');
     save(filename,'D');
-    'matrix kmeans saved'
+    'matrix kmeans saved';
     
-    X = sparsecode(D,data);
-    
-    for i=1:size(D,2),
-        tempX=X(i,:);
-        a=(tempX>0).*tempX;
-        if(find(a)<size(X,2)/2)
-            D(:,i)=-1*D(:,i);
-            b=(tempX<0).*tempX;
-            X(i,:)=-1*b;
-        else
-            X(i,:)=a;
-        end
-        
+%     X = ompCholesky(D,data,3);
+%     
+%     for i=1:size(D,2),
+%         tempX=X(i,:);
+%         a=(tempX>0).*tempX;
+%         if(find(a)<size(X,2)/2)
+%             D(:,i)=-1*D(:,i);
+%             b=(tempX<0).*tempX;
+%             X(i,:)=-1*b;
+%         else
+%             X(i,:)=a;
+%         end
+%         
+%     end
+
+    X=rand(size(D,2),size(data,2));
+
+    for dummy_c=1:100
+        X=(X.*(D'*data))./((D'*D)*X+lambda);
     end
     
 %     imagesc(X);colorbar;axis on;
@@ -54,7 +68,7 @@ function [A,S,errors,A_kmeans]=my_nnsc(data,dictsize,maxiter,p,numDisplay,mu,lam
     X=data; %data
     A=D; %dictionary
     A_kmeans=A;
-    
+    mu=0.05;
     
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Main loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
