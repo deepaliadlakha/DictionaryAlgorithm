@@ -16,7 +16,7 @@ function a=sparsecodeNew(D,data,targetSparsity)
        count = 1;
        flag = zeros(1,k,'uint8');
        gamma=zeros(k,1);
-       I=[];
+       I=zeros(1,k);
       
        %while(count<=min(k/3,15))
        while(count<=min(targetSparsity,k))
@@ -31,9 +31,9 @@ function a=sparsecodeNew(D,data,targetSparsity)
         [ ~, maxDotAtom ] = max (abs (Dunused' * R));
         maxDotAtom = temp(maxDotAtom);
       
-        I=[I maxDotAtom];
+        I(1,count)=maxDotAtom;
         flag(1,maxDotAtom)=1;
-        a(maxDotAtom,i)=D(:,maxDotAtom)' * R;
+        %a(maxDotAtom,i)=D(:,maxDotAtom)' * R;
         
         phi(:,count)=D(:,maxDotAtom);
         
@@ -41,8 +41,8 @@ function a=sparsecodeNew(D,data,targetSparsity)
         %imagesc (phi_current); colorbar;
         intermMatrix=phi_current'*phi_current;
         %pause
-        gamma(I,1)=(intermMatrix \ phi_current')*X;
-        P=phi_current*gamma(I,1);
+        gamma(I(1,1:count),1)=(intermMatrix \ phi_current')*X;
+        P=phi_current*gamma(I(1,1:count),1);
         %P=phi_current*pinv(intermMatrix)*phi_current';
         count=count+1;
         R=X-P;

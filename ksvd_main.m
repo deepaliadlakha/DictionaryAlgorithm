@@ -5,8 +5,8 @@ function [Y,D,coeff,rmse_image]=ksvd_main(param,dictsize,maxIter,numDisplay,p,sp
 
     numatoms=dictsize;
     [X, ~] = imread('barbara.png');
-    X=single(X);
-    X=X/255;
+    X=mat2gray(X);
+    %X=X/255;
     
 %     X=X(1:200,1:200);
 
@@ -36,11 +36,10 @@ function [Y,D,coeff,rmse_image]=ksvd_main(param,dictsize,maxIter,numDisplay,p,sp
     var_data=var_data.*(var_data>0.01); %based on data
 
     dataSelected = data(:,logical(var_data));
-    
  if(param==1)
      
     
-    [D,~,~]=my_ksvd (dataSelected,dictsize,maxIter,p,numDisplay,sparseParam,targetSparsity); %Threshold not clear take a clear patch
+    [D]=my_ksvd (param,dataSelected,dictsize,maxIter,p,numDisplay,sparseParam,targetSparsity); %Threshold not clear take a clear patch
     filename=strcat('./output/D_',int2str(dictsize),'.mat');
     save(filename,'D');
     D_new=ones(size(D,1),size(D,2)+1);
@@ -48,7 +47,7 @@ function [Y,D,coeff,rmse_image]=ksvd_main(param,dictsize,maxIter,numDisplay,p,sp
     D_new(:,2:end)=D;
     
     if (sparseParam)
-        coeff=sparsecode(D_new,data_later,targetSparsity);
+        coeff=sparsecodeNew(D_new,data_later,targetSparsity);
     else
         coeff=ompCholesky(D_new,data_later,targetSparsity);
     end
@@ -58,7 +57,7 @@ function [Y,D,coeff,rmse_image]=ksvd_main(param,dictsize,maxIter,numDisplay,p,sp
     save(filename,'coeff');
     'matrix saved'
     
- else
+ elseif(param==2)
     filename=strcat('./output/D_',int2str(dictsize),'.mat');
     load(filename,'D');
     D_new=ones(size(D,1),size(D,2)+1);
@@ -67,6 +66,25 @@ function [Y,D,coeff,rmse_image]=ksvd_main(param,dictsize,maxIter,numDisplay,p,sp
     filename=strcat('./output/coeff_',int2str(dictsize),'.mat');
     load(filename,'coeff');
     'matrix loaded'
+    
+ else
+    [D]=my_ksvd (param,dataSelected,dictsize,maxIter,p,numDisplay,sparseParam,targetSparsity); %Threshold not clear take a clear patch
+    filename=strcat('./output/D_kmeans_',int2str(dictsize),'.mat');
+    save(filename,'D');
+    D_new=ones(size(D,1),size(D,2)+1);
+    D_new=D_new/p;
+    D_new(:,2:end)=D;
+    
+    if (sparseParam)
+        coeff=sparsecodeNew(D_new,data_later,targetSparsity);
+    else
+        coeff=ompCholesky(D_new,data_later,targetSparsity);
+    end
+    
+    filename=strcat('./output/coeff_kmeans_',int2str(dictsize),'.mat');
+    save(filename,'coeff');
+    'matrix kmeans saved'
+     
  end
  
     %display_dictionary(D,p,numDisplay,size(D,2));
@@ -103,11 +121,13 @@ function [Y,D,coeff,rmse_image]=ksvd_main(param,dictsize,maxIter,numDisplay,p,sp
     end
     
     rmse_image=(Y(:)-X(:)).^2;
-    rmse_image=sqrt(sum(rmse_image)/(size(Y,1)*size(Y,2)))
+    rmse_image=sqrt(sum(rmse_image)/(size(Y,1)*size(Y,2)));
     filename=strcat('./output/outpimage_',int2str(numatoms),'.png');
-    save_image(Y, filename, 0);
     
-    display_dictionary(D,p,numDisplay,size(D,2));
+    imwrite(Y,filename);
+    %save_image(X, filename, 0);
+    
+    %display_dictionary(D,p,numDisplay,size(D,2));
     %imshow(Y);
     %pause
     

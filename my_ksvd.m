@@ -1,4 +1,4 @@
-function [D,X,errors,D_kmeans]=my_ksvd(data,dictsize,maxiter,p,numDisplay,sparseParam,targetSparsity)
+function [D]=my_ksvd(param,data,dictsize,maxiter,p,numDisplay,sparseParam,targetSparsity)
 
     n=size (data,1);
     m=size (data,2);
@@ -13,7 +13,11 @@ function [D,X,errors,D_kmeans]=my_ksvd(data,dictsize,maxiter,p,numDisplay,sparse
     for i=1:dictsize-1,
         diff=data-D_initial(:,i*ones(1,m));
         dist(i,:)=sum(diff.^2);  
-        [~, maxind]=max(min(dist(1:i,:)));
+        if i==1
+            [~, maxind]=max(dist(1,:));
+        else
+            [~, maxind]=max(min(dist(1:i,:)));
+        end
         D_initial(:,i+1)=data(:,maxind);
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Kmeans %%%%%%%%%%%%%%%%
@@ -23,9 +27,12 @@ function [D,X,errors,D_kmeans]=my_ksvd(data,dictsize,maxiter,p,numDisplay,sparse
     D_kmeans=D;
     'kmeans done';
     
-    filename=strcat('./output/D_kmeans_',int2str(dictsize),'.mat');
-    save(filename,'D');
+%     filename=strcat('./output/D_kmeans_',int2str(dictsize),'.mat');
+%     save(filename,'D');
     'matrix kmeans saved'
+    if(param==3)
+        return;
+    end
     
     %kmeansD=D;
     %kmeansdictsize=dictsize;
@@ -56,7 +63,7 @@ function [D,X,errors,D_kmeans]=my_ksvd(data,dictsize,maxiter,p,numDisplay,sparse
 
         
         residual = data - D * X;
-        curr_error = sqrt (mean (residual(:).^2))
+        curr_error = sqrt (mean (residual(:).^2));
         errors(1,it_count)=curr_error;
         threshold = prctile (abs (X(:)), 85);
      
