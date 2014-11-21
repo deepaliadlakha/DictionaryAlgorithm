@@ -47,7 +47,7 @@ function [D]=my_ksvd(param,data,dictsize,maxiter,p,numDisplay,sparseParam,target
         if (sparseParam)
             X = sparsecodeNew(D,data,targetSparsity);
          else
-            X = ompCholesky(D,data,targetSparsity);
+            X = ompCholesky(D,data);
         end
         
 % res=data(:,1)-D*X(:,1);

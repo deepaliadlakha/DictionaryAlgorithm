@@ -146,10 +146,10 @@ function [D,rmse_count]=ksvd_all_images(param,dictsize,maxIter,numDisplay,p,targ
     
     
     
-    coeff_barbara=ompCholesky(D_new,data_barbara,targetSparsity);
-    coeff_boats=ompCholesky(D_new,data_boats,targetSparsity);
-    coeff_house=ompCholesky(D_new,data_house,targetSparsity);
-    coeff_lena=ompCholesky(D_new,data_lena,targetSparsity);
+    coeff_barbara=ompCholesky(D_new,data_barbara);
+    coeff_boats=ompCholesky(D_new,data_boats);
+    coeff_house=ompCholesky(D_new,data_house);
+    coeff_lena=ompCholesky(D_new,data_lena);
    
   
         
