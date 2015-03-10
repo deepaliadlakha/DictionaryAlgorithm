@@ -1,5 +1,4 @@
-
-function [A,S,errors,A_kmeans]=my_nnsc(data,dictsize,maxiter,lambda)
+function [A,S,errors,A_kmeans]=my_nnsc(data,dictsize,maxiter,p,numDisplay,lambda)
     
 
     n=size (data,1);
@@ -97,10 +96,7 @@ function [A,S,errors,A_kmeans]=my_nnsc(data,dictsize,maxiter,lambda)
             A=(A>0).*A;
             A=normc(A);
         end
-        
-        for ii=1:100
-            S=(S.*(A'*X))./((A'*A)*S+lambda);
-        end
+        S=(S.*(A'*X))./((A'*A)*S+lambda);
         mu=1.2*mu;       
      
     end  
@@ -110,8 +106,3 @@ function [A,S,errors,A_kmeans]=my_nnsc(data,dictsize,maxiter,lambda)
     errors=errors(1:it_count);
   
 end
-
-
-
-
-

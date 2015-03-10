@@ -1,9 +1,9 @@
 
-function [A,S,errors,A_kmeans]=my_nnsc(data,dictsize,maxiter,lambda)
+function [A,S,errors]=nnsc_and_log(data,dictsize,maxiter,lambda) %removed two things from the parameters
     
-
-    n=size (data,1);
-    m=size (data,2);
+    thresh=0.005;
+    n=size(data,1);
+    m=size(data,2);
     %%%%%%%%%%%%%%%%%%%%%%%% Farthest Point Clustering %%%%%%%%%%%%%%%%%%%%%%%
     D_initial = zeros (n, dictsize);
     rng(0);
@@ -22,6 +22,7 @@ function [A,S,errors,A_kmeans]=my_nnsc(data,dictsize,maxiter,lambda)
             [~, maxind]=max(min(dist(1:i,:)));
         end
         D_initial(:,i+1)=data(:,maxind);
+        
     end
     
     
@@ -33,7 +34,7 @@ function [A,S,errors,A_kmeans]=my_nnsc(data,dictsize,maxiter,lambda)
     'kmeans done';
     
     
-    filename=strcat('./output/D_kmeans_',int2str(dictsize),'.mat');
+    filename=strcat('./output_log/D_kmeans_',int2str(dictsize),'.mat');
     save(filename,'D');
     'matrix kmeans saved';
     
@@ -70,6 +71,9 @@ function [A,S,errors,A_kmeans]=my_nnsc(data,dictsize,maxiter,lambda)
     A_kmeans=A;
     mu=0.05;
     
+    eps=0.001;
+    
+    
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Main loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     for it_count=1:maxiter
@@ -80,27 +84,64 @@ function [A,S,errors,A_kmeans]=my_nnsc(data,dictsize,maxiter,lambda)
         curr_fro_error=0.5*fro_norm*fro_norm;
         curr_error=curr_fro_error+lambda*sum(S(:));
         
-        
-    
         errors(1,it_count)=curr_error;
 
         Aprev=A;
+        A;
         %Sprev=S;
         
         A=A-mu*(A*S-X)*S';
         A=(A>0).*A;
         A=normc(A);
         
-        while(0.5*norm(X-A*S,'fro')*norm(X-A*S,'fro')>curr_fro_error);
+        ai=1;
+        while(0.5*norm(X-A*S,'fro')*norm(X-A*S,'fro')>curr_fro_error && ai<200)
             mu=mu/2;
             A=Aprev-mu*(Aprev*S-X)*S';
             A=(A>0).*A;
             A=normc(A);
+            ai=ai+1;
         end
         
-        for ii=1:100
-            S=(S.*(A'*X))./((A'*A)*S+lambda);
-        end
+%         for ii=1:10 
+%             Sr=(S.*(A'*X))./((A'*A)*S+lambda);
+%         end
+%         Sr(:,1:10)
+%         pause
+        
+%         for ci=1:10
+
+        it_count
+
+            Sn=S;
+            for cols=1:size(S,2)
+%                 for ii=1:10
+
+                ii=1;
+                W=diag(ones(size(S(:,cols))));
+                err=norm(data(:,cols)-A*W*S(:,cols),'fro')+lambda*sum(log(abs(S(:,cols))+eps));
+                lasterr=0;
+                while(abs(err-lasterr)>thresh*lasterr && ii<150)
+                    lasterr=err;
+                    W=diag(S(:,cols)+eps);
+                    An=A*W;
+                    S(:,cols)=(S(:,cols).*(An'*X(:,cols)))./((An'*An)*S(:,cols)+lambda);
+                    err=norm(data(:,cols)-A*W*S(:,cols),'fro')+lambda*sum(log(abs(S(:,cols))+eps));
+%                     norm(X-An*S,'fro')
+%                     S(:,cols)
+                    ii=ii+1;
+                end
+                
+%                norm(data(:,cols)-A*W*S(:,cols),'fro')
+%                 pause
+                Sn(:,cols)=W*S(:,cols);
+            end
+            S=Sn;
+            
+%          end
+%         S(:,1:10)
+%         pause
+        
         mu=1.2*mu;       
      
     end  

@@ -1,11 +1,21 @@
-function [Y,D,coeff,rmse_image]=ksvd_main(param,dictsize,maxIter,numDisplay,p,sparseParam,targetSparsity)
+function [Y,D,coeff,rmse_image]=ksvd_main(param,dictsize,maxIter,numDisplay,p)
 
     close all
     rng (0);
 
     numatoms=dictsize;
-    [X, ~] = imread('barbara.png');
+    [X, ~] = imread('lena.png');
+    save_image(X, './output/original_lena.png', 0);
+    X_old=mat2gray(X);
+    X = double(X)+randn(size(X,1),size(X,2))*5;
     X=mat2gray(X);
+    save_image(X, './output/noisy_lena_0_1.png', 0);
+    
+    'noisy RMSE'
+    norm(X(10:end-10,10:end-10)-X_old(10:end-10,10:end-10),'fro')/sqrt(numel(X_old(10:end-10,10:end-10)))
+    
+    
+    
     %X=X/255;
     
 %     X=X(1:200,1:200);
@@ -35,22 +45,24 @@ function [Y,D,coeff,rmse_image]=ksvd_main(param,dictsize,maxIter,numDisplay,p,sp
     var_data=var(data);
     var_data=var_data.*(var_data>0.01); %based on data
 
+    
+    
     dataSelected = data(:,logical(var_data));
+    'size'
+    size(dataSelected)
  if(param==1)
      
     
-    [D]=my_ksvd (param,dataSelected,dictsize,maxIter,p,numDisplay,sparseParam,targetSparsity); %Threshold not clear take a clear patch
+    [D]=my_ksvd (param,dataSelected,dictsize,maxIter,p,numDisplay); %Threshold not clear take a clear patch
     filename=strcat('./output/D_',int2str(dictsize),'.mat');
     save(filename,'D');
     D_new=ones(size(D,1),size(D,2)+1);
     D_new=D_new/p;
     D_new(:,2:end)=D;
     
-    if (sparseParam)
-        coeff=sparsecodeNew(D_new,data_later,targetSparsity);
-    else
-        coeff=ompCholesky(D_new,data_later,targetSparsity);
-    end
+    
+    coeff=ompCholesky(D_new,data_later);
+    
         
     
     filename=strcat('./output/coeff_',int2str(dictsize),'.mat');
@@ -67,29 +79,39 @@ function [Y,D,coeff,rmse_image]=ksvd_main(param,dictsize,maxIter,numDisplay,p,sp
     load(filename,'coeff');
     'matrix loaded'
     
- else
-    [D]=my_ksvd (param,dataSelected,dictsize,maxIter,p,numDisplay,sparseParam,targetSparsity); %Threshold not clear take a clear patch
+ elseif(param==3)
+    [D]=my_ksvd (param,dataSelected,dictsize,maxIter,p,numDisplay); %Threshold not clear take a clear patch
     filename=strcat('./output/D_kmeans_',int2str(dictsize),'.mat');
     save(filename,'D');
     D_new=ones(size(D,1),size(D,2)+1);
     D_new=D_new/p;
     D_new(:,2:end)=D;
     
-    if (sparseParam)
-        coeff=sparsecodeNew(D_new,data_later,targetSparsity);
-    else
-        coeff=ompCholesky(D_new,data_later,targetSparsity);
-    end
+    
+    coeff=ompCholesky(D_new,data_later);
+    
     
     filename=strcat('./output/coeff_kmeans_',int2str(dictsize),'.mat');
     save(filename,'coeff');
-    'matrix kmeans saved'
-     
+    'matrix kmeans ------saved'
+    
+elseif(param==4)
+    filename=strcat('./output/D_kmeans_',int2str(dictsize),'.mat');
+    load(filename,'D');
+%     D_new=ones(size(D,1),size(D,2)+1);
+%     D_new=D_new/p;
+%     D_new(:,2:end)=D;
+    D_new=D;
+    coeff=ompCholesky(D_new,data);
+    
  end
  
     %display_dictionary(D,p,numDisplay,size(D,2));
 
     Y_new=D_new*coeff;   
+    if(param==4)
+        Y_new=Y_new+mean_data;
+    end
     
 %%%%%%%%%%%%%%% Averaging over the pixels %%%%%%%%%%%%%%%%%%%%%%%%%   
 %     norm(dataSelected-D_new*coeff,'fro')
@@ -120,16 +142,19 @@ function [Y,D,coeff,rmse_image]=ksvd_main(param,dictsize,maxIter,numDisplay,p,sp
         end
     end
     
-    rmse_image=(Y(:)-X(:)).^2;
-    rmse_image=sqrt(sum(rmse_image)/(size(Y,1)*size(Y,2)));
+    rmse_image=norm(Y(10:end-10,10:end-10)-X_old(10:end-10,10:end-10),'fro')/sqrt(numel(X_old(10:end-10,10:end-10)));
+    rmse_image
+    pause
+    
     filename=strcat('./output/outpimage_',int2str(numatoms),'.png');
+    save_image(Y, filename, 0);
     
-    imwrite(Y,filename);
-    %save_image(X, filename, 0);
-    
-    %display_dictionary(D,p,numDisplay,size(D,2));
-    %imshow(Y);
-    %pause
+%     imshow(Y);colorbar;
+%     pause
+%     
+%     display_dictionary(D,p,numDisplay);
+%     colorbar;
+%     pause
     
     
    

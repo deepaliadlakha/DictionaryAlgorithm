@@ -1,4 +1,4 @@
-function [lambda_val,error_val1,error_val2]=lambda_tuning(dictsize,maxIter,numDisplay,p,noiseLevel)
+function [error_val1]=lambda_tuning(dictsize,maxIter,numDisplay,p)
 
     addpath('../common/export_fig/')
     addpath('../common/')
@@ -8,29 +8,17 @@ function [lambda_val,error_val1,error_val2]=lambda_tuning(dictsize,maxIter,numDi
      rng (0);
     
     
+    noise_level=100;
 
 % %     Barbara 
-    [X, ~] = imread('lena.png');
+    [X, ~] = imread('boats.png');
     X_old=mat2gray(X);
     
-    X = double(X_old)+randn(size(X_old,1),size(X_old,2))*noiseLevel;
-%     X=mat2gray(X,[0 1]);
-    X=X.*(X>0);
-    norm(X(10:end-10,10:end-10)-X_old(10:end-10,10:end-10),'fro')/sqrt(numel(X_old(10:end-10,10:end-10)))
-    imshow(X);colorbar;pause;
-    
-%     X = double(X)+randn(size(X,1),size(X,2))*0;
+%     X = double(X)+randn(size(X,1),size(X,2))*noise_level;
    
-%     X=X.*(X>0);
-%     X=X.*(X<=255);
-%     X=mat2gray(X);
-    
+    X=mat2gray(X);
     
     save_image(X,'./output/noisy_barbara_', 0);
-    
-%     imshow(X);colorbar;
-%     imshow(X_old);colorbar;
-%     pause
     
     
 
@@ -63,13 +51,13 @@ function [lambda_val,error_val1,error_val2]=lambda_tuning(dictsize,maxIter,numDi
         end
     end
     
-    
+%     
 %     
 % % %     Boats 
 %     [X, ~] = imread('boats.png');
 %     X_old=mat2gray(X);
 %    
-% %     X = double(X)+randn(size(X,1),size(X,2))*noise_level;
+%     X = double(X)+randn(size(X,1),size(X,2))*noise_level;
 %     
 %     
 %     X=mat2gray(X);
@@ -109,7 +97,7 @@ function [lambda_val,error_val1,error_val2]=lambda_tuning(dictsize,maxIter,numDi
 %     [X, ~] = imread('house.png');
 %     X_old=mat2gray(X);
 %    
-% %     X = double(X)+randn(size(X,1),size(X,2))*noise_level;
+%     X = double(X)+randn(size(X,1),size(X,2))*noise_level;
 %     
 %     
 %     X=mat2gray(X);
@@ -149,7 +137,7 @@ function [lambda_val,error_val1,error_val2]=lambda_tuning(dictsize,maxIter,numDi
 %     [X, ~] = imread('lena.png');
 %     X_old=mat2gray(X);
 %     
-% %     X = double(X)+randn(size(X,1),size(X,2))*noise_level;
+%     X = double(X)+randn(size(X,1),size(X,2))*noise_level;
 %     
 %     
 %     X=mat2gray(X);
@@ -184,32 +172,14 @@ function [lambda_val,error_val1,error_val2]=lambda_tuning(dictsize,maxIter,numDi
 %            count=count+1;
 %         end
 %     end
-    
-%      dataSelected=[data_barbara data_boats data_house data_lena];
-%      data_old=[data_barbara_old data_boats_old data_house_old data_lena_old];
+%     
+%     data=[data_barbara data_boats data_house data_lena];
+%     data_old=[data_barbara_old data_boats_old data_house_old data_lena_old];
 
-     dataSelected=data_barbara;
-     data_old=data_barbara_old;
-     data_later=data_old;
-     
-%     dataSelected = double(dataSelected)+randn(size(dataSelected,1),size(dataSelected,2))*1;
-%     dataSelected=mat2gray(dataSelected,[0 1]);
-
-%     dataSelected = double(dataSelected)+randn(size(dataSelected,1),size(dataSelected,2))*noiseLevel;
-%     dataSelected = mat2gray(dataSelected);
-    
-    norm(data_old-dataSelected,'fro')/sqrt(numel(data_old))
-    
-    
-%     pause
-    
-%    dataSelected = datasample(data,size(data,2),2,'Replace',false);
-%     display_dictionary(dataSelected,3,1);
-%     pause
-    
-    
-%     dataSelected=dataSelected.*(dataSelected>0);
-%     data_old=data_barbara_old;
+    dataSelected=data_barbara;
+    dataSelected = double(dataSelected)+randn(size(dataSelected,1),size(dataSelected,2))*0.5;
+    dataSelected=dataSelected.*(dataSelected>0);
+    data_old=data_barbara_old;
     
 %     dataSelected=data;
 %     minInt=ones(1,size(data,2));
@@ -230,14 +200,12 @@ function [lambda_val,error_val1,error_val2]=lambda_tuning(dictsize,maxIter,numDi
     
     
     var_data=var(data_old);
-    var_data=var_data.*(var_data>0.05); %based on data
+    var_data=var_data.*(var_data>0.07); %based on data
 
-    dataNoisy=dataSelected;
     dataSelected = dataSelected(:,logical(var_data));
     
-    
     data_oldSelected = data_old(:,logical(var_data));
-    [dataSelected, order] = datasample(dataSelected,1000,2,'Replace',false);
+    [dataSelected, order] = datasample(dataSelected,500,2,'Replace',false);
     data_oldSelected=data_oldSelected(:,order);
     m=size(dataSelected,2);
     
@@ -262,9 +230,8 @@ function [lambda_val,error_val1,error_val2]=lambda_tuning(dictsize,maxIter,numDi
     
     mask(5,allot+1:allot+rem)=ones(1,rem);
     
-    lambda_val=[0,0.01,0.1,0.13,0.15,0.17,0.2,0.5,0.7,0.9,1,2,3,4,5];
+    lambda_val=[0,0.001,0.01,0.05,0.1,0.5,1,1.5,2,2.5,3,3.5,4];
     error_val=zeros(size(lambda_val,1),size(lambda_val,2));
-    error_val2=zeros(size(lambda_val,1),size(lambda_val,2));
     
     
     for i=1:size(lambda_val,2)
@@ -288,56 +255,20 @@ function [lambda_val,error_val1,error_val2]=lambda_tuning(dictsize,maxIter,numDi
          end
 % %         coeff_val
 % %         pause
-         error_val(i)=error_val(i)+norm(val_set_true-D*coeff_val,'fro')/sqrt(numel(val_set));
-         error_val2(i)=error_val2(i)+norm(val_set-D*coeff_val,'fro')/sqrt(numel(val_set));
+         error_val(i)=error_val(i)+norm(val_set_true-D*coeff_val,'fro')/numel(val_set);
      end
      
       subplot(1,4,1),  display_dictionary(val_set_true(:,1:10),8,2);
       subplot(1,4,2),  display_dictionary(val_set(:,1:10),8,2);
       subplot(1,4,3), display_dictionary(D*coeff_val(:,1:10),8,2);
       coeff_val;
-      '----------------'
-      lambda_val(i)
-      error_val(i)=error_val(i)/5;
-%       error_val2(i)
+      error_val(i)
       subplot(1,4,4), display_dictionary(D,8,2);
-       
+      pause
      
 %       display_dictionary(D,8,1);
     end
     
-    
-    close all;
-    
-    [~,minIndex]=min(error_val);
-    corr_lambda=lambda_val(minIndex);
-    corr_lambda
-%      corr_lambda=0;
-     [D,~,~]=my_nnsc (dataSelected,dictsize,maxIter,p,numDisplay,corr_lambda);
-     display_dictionary(D,8,5);colorbar;
-      pause
-    coeff_val=rand(size(D,2),size(dataNoisy,2)); 
-         for dummy_c=1:100
-             coeff_val=(coeff_val.*(D'*dataNoisy))./((D'*D)*coeff_val+corr_lambda);
-         end
-%                    imagesc(coeff_val);colormap('default');colorbar;pause
-         
-        Y_new=D*coeff_val;   
-        Y=zeros(size(X,1),size(X,2));
-        count=1;
-        for i=1:row_lim,
-            for j=1:col_lim,
-               pCrosspMat=reshape(Y_new(:,count),p,p);
-               Y(i+4,j+4)=pCrosspMat(4,4);
-               count=count+1;
-            end
-        end
-        
-        'klklk'
-        imshow(X_old);colorbar;pause
-        norm(Y(10:end-10,10:end-10)-X_old(10:end-10,10:end-10),'fro')/sqrt(numel(X_old(10:end-10,10:end-10)))
-        imshow(Y);colorbar;pause;
-        
     error_val1=error_val;
 %     error_val=zeros(size(lambda_val,1),size(lambda_val,2));
 %     

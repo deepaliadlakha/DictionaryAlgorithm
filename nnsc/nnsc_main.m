@@ -59,7 +59,7 @@ function [rmse_image]=nnsc_main(param,dictsize,maxIter,numDisplay,p,mu,lambda)
  if(param==1)
      
     
-    [A,S,~]=my_nnsc (dataSelected,dictsize,maxIter,p,numDisplay,mu,lambda); %Threshold not clear take a clear patch
+    [A,S,~]=my_nnsc (dataSelected,dictsize,maxIter,p,numDisplay,lambda); %Threshold not clear take a clear patch
     filename=strcat('./output/A_',int2str(dictsize),'.mat');
     save(filename,'A');
     filename=strcat('./output/S_',int2str(dictsize),'.mat');
@@ -86,6 +86,10 @@ function [rmse_image]=nnsc_main(param,dictsize,maxIter,numDisplay,p,mu,lambda)
     
     S_new=ones(size(S,1)+1,size(S,2));
     
+    
+    size(S_new)
+    size(minInt)
+    pause
     
     S_new(1,:)=minInt(1,:);
     S_new(2:end,:)=S;

@@ -1,4 +1,4 @@
-function [lambda_val,error_val1,error_val2]=nnsc_test(maxIter,numDisplay,noise_level)
+function [error_val1]=nnsc_test(maxIter,numDisplay)
 %     rng(0);
 
     rng(0);
@@ -37,8 +37,8 @@ function [lambda_val,error_val1,error_val2]=nnsc_test(maxIter,numDisplay,noise_l
     
     features=normc(features);
     
-%     display_dictionary(features,3,5);colorbar;
-%     pause
+    %display_dictionary(features,3,5,size(features,2));
+    %pause
     %filename=strcat('./output_nnsc/original_pic.png');
     %save_image(dictionaryPic, filename, 0);
     
@@ -71,45 +71,13 @@ function [lambda_val,error_val1,error_val2]=nnsc_test(maxIter,numDisplay,noise_l
     end
     
     
- 
-    data=mat2gray(data);
-    data_later=data;
+    
+    data_later=normc(data);
     
     dataSelected=data;
-    
-%     display_dictionary(dataSelected(:,1:100),3,10);colorbar;
-%      pause
-    dataSelected = double(dataSelected)+randn(size(dataSelected,1),size(dataSelected,2))*noise_level;
-    
-    
-    
-%     for i=1:dataSelected(:,size(dataSelected,2))
-%         dataSelected(:,i)=mat2gray(dataSelected(:,i));
-%     end
-    
-%     dataSelected=dataSelected.*(dataSelected>0);
-%     dataSelected=normc(dataSelected);
-    norm(data-dataSelected,'fro')/sqrt(numel(data))
-    
+    dataSelected = double(dataSelected)+randn(size(dataSelected,1),size(dataSelected,2))*1;
     dataSelected=dataSelected.*(dataSelected>0);
-    
-%     size(dataSelected)
-     display_dictionary(dataSelected(:,1:100),3,10);colorbar;
-      pause
-    
-    
-%     norm(dataSelected(:,4))
-%     norm(data_later(:,4))
-%     pause
-%     dataSelected=normc(dataSelected);
-    subplot(1,2,1);display_dictionary(data(:,20:24),3,5);colorbar;
-    subplot(1,2,2);display_dictionary(dataSelected(:,20:24),3,5);colorbar;
-%     pause
-    
-    norm(data-dataSelected,'fro')/sqrt(numel(data))
-    
-    pause
-   
+    dataSelected=normc(dataSelected);
 %     
 %     display_dictionary(dataSelected(:,1:5),3,5);
 %     pause
@@ -141,10 +109,9 @@ function [lambda_val,error_val1,error_val2]=nnsc_test(maxIter,numDisplay,noise_l
     rem=m-allot;
     
     mask(5,allot+1:allot+rem)=ones(1,rem);
-     lambda_val=[0,0.001,0.01,0.02,0.03,0.05,0.07,0.1,0.12,0.15,0.17,0.2,0.23,0.25,0.3,0.31,0.32,0.33,0.35,0.4,0.41,0.42,0.45,0.5,0.55,0.6,0.75,1];
-%      lambda_val=[0.3,0.31,0.32,0.325,0.33,0.335,0.34,0.35];
+     lambda_val=[0,0.001,0.01,0.02,0.03,0.05,0.07,0.1,0.12,0.15,0.17,0.2,0.3,0.5,0.75,1];
+%     lambda_val=[1,1.1,1.2,1.5,2,100];
     error_val=zeros(size(lambda_val,1),size(lambda_val,2));
-    error_val2=zeros(size(lambda_val,1),size(lambda_val,2));
     
     dictsize=10;
     for i=1:size(lambda_val,2)
@@ -160,8 +127,7 @@ function [lambda_val,error_val1,error_val2]=nnsc_test(maxIter,numDisplay,noise_l
 %         val_set=data_later(:,1:size(combinations_three,1));
         
         
-        [D,~,~]=nnsc_and_log (train_set,dictsize,maxIter,p,numDisplay,lambda_val(i));
-        
+        [D,~,~]=my_nnsc (train_set,dictsize,maxIter,p,numDisplay,lambda_val(i));
 %         coeff_val=ompCholesky(D,train_set,3);
 %         coeff_val
         'kklll'
@@ -180,29 +146,20 @@ function [lambda_val,error_val1,error_val2]=nnsc_test(maxIter,numDisplay,noise_l
          end
 % %         coeff_val
 % %         pause
-         error_val(i)=error_val(i)+norm(val_set_true-D*coeff_val,'fro')/sqrt(numel(val_set));
-         error_val2(i)=error_val2(i)+norm(val_set-D*coeff_val,'fro')/sqrt(numel(val_set));
+         error_val(i)=error_val(i)+norm(val_set_true-D*coeff_val,'fro')/numel(val_set);
 %         
        
      end
 %       display_dictionary(D,3,1,size(D,2));
 %       pause
 
-
-        
-         
-
       subplot(1,4,1),  display_dictionary(val_set_true,3,5);
       subplot(1,4,2),  display_dictionary(val_set,3,5);
       subplot(1,4,3), display_dictionary(D*coeff_val,3,5);
       coeff_val;
-      error_val(i)=error_val(i)/5;
-%       error_val(i)
-      
-      error_val2(i)=error_val2(i)/5;
-%       error_val2(i)
+      error_val(i)
       subplot(1,4,4), display_dictionary(D,3,5);
-%        pause
+      pause
 
 %       subplot(1,2,1),  display_dictionary(features,3,1);
 %       error_val(i)
@@ -211,30 +168,6 @@ function [lambda_val,error_val1,error_val2]=nnsc_test(maxIter,numDisplay,noise_l
     
     
     end
-    
-    close all;
-    
-    [~,minIndex]=min(error_val);
-    corr_lambda=lambda_val(minIndex);
-    
-    corr_lambda=0;
-     [D,~,~]=my_nnsc (train_set,dictsize,maxIter,p,numDisplay,corr_lambda);
-     display_dictionary(D,3,5);colorbar;
-        pause
-    coeff_val=rand(size(D,2),size(dataSelected,2)); 
-         for dummy_c=1:100
-             coeff_val=(coeff_val.*(D'*dataSelected))./((D'*D)*coeff_val+corr_lambda);
-         end
-         
-         imagesc(coeff_val);colormap('default');colorbar;pause
-         
-         temp=D*coeff_val;
-         'opppo noisy'
-         corr_lambda
-         norm(data_later-dataSelected,'fro')/sqrt(numel(data_later))
-         norm(data_later-D*coeff_val,'fro')/sqrt(numel(data_later))
-         display_dictionary(temp(:,1:100),3,10);colorbar;
-        pause
     
     error_val1=error_val;
     

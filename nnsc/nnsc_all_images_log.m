@@ -1,4 +1,4 @@
-function [D,rmse_count,coeff_barbara]=nnsc_all_images(param,dictsize,maxIter,numDisplay,p,lambda,noiseLevel)
+function [D_new,coeff_barbara,rmse_count]=nnsc_all_images_log(param,second_param,dictsize,maxIter,numDisplay,p,lambda,noiseLevel)
 
     addpath('../common/export_fig/')
     addpath('../common/')
@@ -16,8 +16,13 @@ function [D,rmse_count,coeff_barbara]=nnsc_all_images(param,dictsize,maxIter,num
     X = double(X_old)+randn(size(X_old,1),size(X_old,2))*noiseLevel;
     X=mat2gray(X,[0 1]); 
     
-    save_image(X,'./output/noisy_barbara_', 0);
+    if second_param==1
+        save_image(X,'./output_log/noisy_barbara_', 0);
+    else
+        save_image(X,'./output/noisy_barbara_', 0);
+    end
     
+
     row_lim=size(X,1);
     col_lim=size(X,2);
 
@@ -46,138 +51,17 @@ function [D,rmse_count,coeff_barbara]=nnsc_all_images(param,dictsize,maxIter,num
            count=count+1;
         end
     end
-      
-% %     Boats 
-    [X, ~] = imread('boats.png');
-    X_old=mat2gray(X);
-    X_boats=X_old;
-   
-%     X = double(X)+randn(size(X,1),size(X,2))*noise_level;
     
     
-    X=mat2gray(X);
-    save_image(X,'./output/noisy_boats_', 0);
+
+    dataSelected=data_barbara;
+    data_old=data_barbara_old;
     
-
-    row_lim=size(X,1);
-    col_lim=size(X,2);
-
-    row_lim=row_lim-p+1;
-    col_lim=col_lim-p+1;
-
-    data_boats=zeros(p*p,row_lim*col_lim);
-
-    count=1;
-    for i=1:row_lim,
-        for j=1:col_lim,
-           window = X(i:i+p-1,j:j+p-1);
-           temp=window(:);
-           data_boats(:,count)= temp;
-           count=count+1;
-        end
+    minInt=ones(1,size(data_barbara,2));
+    for col=1:size(data_barbara,2)
+        minInt(1,col)=min(data_barbara(:,col));
+%         dataSelected(:,col)=dataSelected(:,col)-minInt(1,col);
     end
-    
-    data_boats_old=zeros(p*p,row_lim*col_lim);
-    count=1;
-    for i=1:row_lim,
-        for j=1:col_lim,
-           window = X_old(i:i+p-1,j:j+p-1);
-           temp=window(:);
-           data_boats_old(:,count)= temp;
-           count=count+1;
-        end
-    end
-    
-% %     House 
-    [X, ~] = imread('house.png');
-    X_old=mat2gray(X);
-    X_house=X_old;
-   
-%     X = double(X)+randn(size(X,1),size(X,2))*noise_level;
-    
-    
-    X=mat2gray(X);
-    save_image(X,'./output/noisy_house_', 0);
-    
-
-    row_lim=size(X,1);
-    col_lim=size(X,2);
-
-    row_lim=row_lim-p+1;
-    col_lim=col_lim-p+1;
-
-    data_house=zeros(p*p,row_lim*col_lim);
-
-    count=1;
-    for i=1:row_lim,
-        for j=1:col_lim,
-           window = X(i:i+p-1,j:j+p-1);
-           temp=window(:);
-           data_house(:,count)= temp;
-           count=count+1;
-        end
-    end
-    
-    data_house_old=zeros(p*p,row_lim*col_lim);
-    count=1;
-    for i=1:row_lim,
-        for j=1:col_lim,
-           window = X_old(i:i+p-1,j:j+p-1);
-           temp=window(:);
-           data_house_old(:,count)= temp;
-           count=count+1;
-        end
-    end
-    
-% %     Lena 
-    [X, ~] = imread('lena.png');
-    X_old=mat2gray(X);
-    X_lena=X_old;
-    
-%     X = double(X)+randn(size(X,1),size(X,2))*noise_level;
-    
-    
-    X=mat2gray(X);
-    save_image(X,'./output/noisy_lena_', 0);
-   
-
-    row_lim=size(X,1);
-    col_lim=size(X,2);
-
-    row_lim=row_lim-p+1;
-    col_lim=col_lim-p+1;
-
-    data_lena=zeros(p*p,row_lim*col_lim);
-
-    count=1;
-    for i=1:row_lim,
-        for j=1:col_lim,
-           window = X(i:i+p-1,j:j+p-1);
-           temp=window(:);
-           data_lena(:,count)= temp;
-           count=count+1;
-        end
-    end
-    
-    data_lena_old=zeros(p*p,row_lim*col_lim);
-    count=1;
-    for i=1:row_lim,
-        for j=1:col_lim,
-           window = X_old(i:i+p-1,j:j+p-1);
-           temp=window(:);
-           data_lena_old(:,count)= temp;
-           count=count+1;
-        end
-    end
-    
-%      dataSelected=[data_barbara data_boats data_house data_lena];
-%      data_old=[data_barbara_old data_boats_old data_house_old data_lena_old];
-
-%     dataSelected=[data_barbara data_boats data_house data_lena];
-%     data_old=[data_barbara_old data_boats_old data_house_old data_lena_old];
-
-    dataSelected=[data_barbara];
-    data_old=[data_barbara_old];
 
 
 %     dataSelected=data_barbara;
@@ -215,19 +99,52 @@ function [D,rmse_count,coeff_barbara]=nnsc_all_images(param,dictsize,maxIter,num
     
  if(param==1)
      
-    [D,~,~]=my_nnsc(dataSelected,dictsize,maxIter,p,numDisplay,lambda);
+     
+    if(second_param==1)
+        [D,~,~]=nnsc_and_log(dataSelected,dictsize,maxIter,p,numDisplay,lambda);
+        filename=strcat('./output_log/D_',int2str(dictsize),'.mat');
+        save(filename,'D');
+    else
+        [D,~,~]=my_nnsc(dataSelected,dictsize,maxIter,p,numDisplay,lambda);
+        filename=strcat('./output/D_',int2str(dictsize),'.mat');
+        save(filename,'D');
+    end
+        
 %     [D]=my_ksvd (param,dataSelected,dictsize,maxIter,p,numDisplay,0,targetSparsity); %Threshold not clear take a clear patch
-    filename=strcat('./output/D_',int2str(dictsize),'.mat');
+%     filename=strcat('./output/D_',int2str(dictsize),'.mat');
     save(filename,'D');
     D_new=ones(size(D,1),size(D,2)+1);
     D_new=D_new/p;
     D_new(:,2:end)=D;
+    D_new=D;%%%%%%%%%%%%%%%%%%
     
+    coeff_barbara=ones(size(D_new,2),size(data_barbara,2));
+%     for i=1:100
+%         coeff_barbara=(coeff_barbara.*(D_new'*data_barbara))./((D_new'*D_new)*coeff_barbara+lambda);
+%     end
+
+if(second_param==1)
+    S=coeff_barbara;
+    A=D_new;
+    eps=0.00001;
+   
+    Sn=S;
+    for cols=1:size(S,2)
+        for ii=1:100
+            W=diag(S(:,cols)+eps);
+            An=A*W;
+            S(:,cols)=(S(:,cols).*(An'*data_barbara(:,cols)))./((An'*An)*S(:,cols)+lambda);
+        end
+        Sn(:,cols)=W*S(:,cols);
+    end
     
-    coeff_barbara=rand(size(D_new,2),size(data_barbara,2));
+    S=Sn;
+    coeff_barbara=S;
+else
     for i=1:100
         coeff_barbara=(coeff_barbara.*(D_new'*data_barbara))./((D_new'*D_new)*coeff_barbara+lambda);
     end
+end
     
 %     coeff_boats=rand(size(D_new,2),size(data_boats,2));
 %     for i=1:100
@@ -266,9 +183,14 @@ function [D,rmse_count,coeff_barbara]=nnsc_all_images(param,dictsize,maxIter,num
    
   
         
+    if(second_param==1)
+        filename=strcat('./output_log/coeff_barbara_',int2str(dictsize),'.mat');
+        save(filename,'coeff_barbara');
+    else
+        filename=strcat('./output/coeff_barbara_',int2str(dictsize),'.mat');
+        save(filename,'coeff_barbara');
+    end
     
-    filename=strcat('./output/coeff_barbara_',int2str(dictsize),'.mat');
-    save(filename,'coeff_barbara');
 %     filename=strcat('./output/coeff_boats_',int2str(dictsize),'.mat');
 %     save(filename,'coeff_boats');
 %     filename=strcat('./output/coeff_house_',int2str(dictsize),'.mat');
@@ -277,21 +199,29 @@ function [D,rmse_count,coeff_barbara]=nnsc_all_images(param,dictsize,maxIter,num
 %     save(filename,'coeff_lena');
     'matrix saved'
     
- elseif(param==2)
-    filename=strcat('./output/D_',int2str(dictsize),'.mat');
-    load(filename,'D');
+ elseif(param==2) %change it
+     
+    if(second_param==1)
+        filename=strcat('./output_log/D_',int2str(dictsize),'.mat');
+        load(filename,'D');
+    else
+        filename=strcat('./output/D_',int2str(dictsize),'.mat');
+        load(filename,'D');
+    end
+    
     D_new=ones(size(D,1),size(D,2)+1);
     D_new=D_new/p;
     D_new(:,2:end)=D;
+    D_new=D;
     
-    filename=strcat('./output/coeff_barbara_',int2str(dictsize),'.mat');
-    load(filename,'coeff_barbara');
-    filename=strcat('./output/coeff_boats_',int2str(dictsize),'.mat');
-    load(filename,'coeff_boats');
-    filename=strcat('./output/coeff_house_',int2str(dictsize),'.mat');
-    load(filename,'coeff_house');
-    filename=strcat('./output/coeff_lena_',int2str(dictsize),'.mat');
-    load(filename,'coeff_lena');
+    if(second_param==1)
+        filename=strcat('./output_log/coeff_barbara_',int2str(dictsize),'.mat');
+        load(filename,'coeff_barbara');
+    else
+        filename=strcat('./output/coeff_barbara_',int2str(dictsize),'.mat');
+        load(filename,'coeff_barbara');
+    end
+    
     
     'matrix loaded'
     
@@ -326,7 +256,10 @@ function [D,rmse_count,coeff_barbara]=nnsc_all_images(param,dictsize,maxIter,num
     %display_dictionary(D,p,numDisplay,size(D,2));
 
     
-    Y_new=D_new*coeff_barbara;   
+    Y_new=D_new*coeff_barbara;  
+%     for col=1:size(Y_new,2)
+%         Y_new(:,col)=Y_new(:,col)+minInt(1,col);
+%     end
     Y=zeros(size(X,1),size(X,2));
     count=1;
     for i=1:row_lim,
@@ -338,12 +271,28 @@ function [D,rmse_count,coeff_barbara]=nnsc_all_images(param,dictsize,maxIter,num
     end
     
     rmse_count=[];
-    Y=mat2gray(Y);
+    for ii=1:size(Y,1)
+        for jj=1:size(Y,2)
+            if Y(ii,jj)>1
+                Y(ii,jj)=1;
+            end
+            if Y(ii,jj)<0
+                Y(ii,jj)=0;
+            end
+        end
+    end
+%     Y=mat2gray(Y);
     rmse_image=(Y(:)-X_old(:)).^2;
     rmse_image=sqrt(sum(rmse_image)/(size(Y,1)*size(Y,2)));
     rmse_count=[rmse_count rmse_image];
-    filename=strcat('./output/outpimage_barbara_',int2str(numatoms),'.png');
-    save_image(Y,filename,0);
+    
+    if(second_param==1)
+        filename=strcat('./output_log/outpimage_barbara',int2str(numatoms),'.png');
+        save_image(Y,filename,0);
+    else
+        filename=strcat('./output/outpimage_barbara',int2str(numatoms),'.png');
+        save_image(Y,filename,0);
+    end
     
 %     Y_new=D_new*coeff_boats;   
 %     Y=zeros(size(X,1),size(X,2));

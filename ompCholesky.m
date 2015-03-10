@@ -1,7 +1,7 @@
 
 
 
-function a=ompCholesky(D,data,targetsp)
+function a=ompCholesky(D,data)
 
     m = size(data,2); %m is the no. of training examples
     n = size(D,1); %n is the dimension of the vector space
@@ -30,7 +30,7 @@ function a=ompCholesky(D,data,targetsp)
        
       
 %        while(count<=0.1*size(D,2))
-        while(count<=min(targetsp,size(D,2)))
+        while(count<=min(1,size(D,2)))
        
         %'-----------------------------------'
         %flagIndexZero = find (1-flag);

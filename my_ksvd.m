@@ -1,4 +1,4 @@
-function [D]=my_ksvd(param,data,dictsize,maxiter,p,numDisplay,sparseParam,targetSparsity)
+function [D]=my_ksvd(param,data,dictsize,maxiter,p,numDisplay)
 
     n=size (data,1);
     m=size (data,2);
@@ -26,6 +26,12 @@ function [D]=my_ksvd(param,data,dictsize,maxiter,p,numDisplay,sparseParam,target
     D = normc(D);
     D_kmeans=D;
     'kmeans done';
+     display_dictionary(D,p,numDisplay);colorbar;
+    pause
+    if(dictsize==3)
+        return
+    end
+    
     
 %     filename=strcat('./output/D_kmeans_',int2str(dictsize),'.mat');
 %     save(filename,'D');
@@ -44,11 +50,9 @@ function [D]=my_ksvd(param,data,dictsize,maxiter,p,numDisplay,sparseParam,target
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Main loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     for it_count=1:maxiter
 
-        if (sparseParam)
-            X = sparsecodeNew(D,data,targetSparsity);
-         else
-            X = ompCholesky(D,data);
-        end
+        
+        X = ompCholesky(D,data);
+        
         
 % res=data(:,1)-D*X(:,1);
 % res'
@@ -66,6 +70,8 @@ function [D]=my_ksvd(param,data,dictsize,maxiter,p,numDisplay,sparseParam,target
         curr_error = sqrt (mean (residual(:).^2));
         errors(1,it_count)=curr_error;
         threshold = prctile (abs (X(:)), 85);
+%         display_dictionary(D,p,numDisplay);
+%         pause
      
         for j_count = 1:dictsize
             [D,X,reset_flag] = optimize_atom(data,D,j_count,X,threshold);
