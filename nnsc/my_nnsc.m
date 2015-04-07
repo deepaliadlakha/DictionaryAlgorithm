@@ -74,6 +74,8 @@ function [A,S,errors,A_kmeans]=my_nnsc(data,dictsize,maxiter,lambda)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Main loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     for it_count=1:maxiter
 
+        it_count
+        
         '-----------------------------------';
 
         fro_norm=norm(X-A*S,'fro');

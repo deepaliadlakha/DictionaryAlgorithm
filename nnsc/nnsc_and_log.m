@@ -1,7 +1,9 @@
 
 function [A,S,errors]=nnsc_and_log(data,dictsize,maxiter,lambda) %removed two things from the parameters
     
-    thresh=0.005;
+    thresh=0.001;
+    Thresh=0.01;
+    
     n=size(data,1);
     m=size(data,2);
     %%%%%%%%%%%%%%%%%%%%%%%% Farthest Point Clustering %%%%%%%%%%%%%%%%%%%%%%%
@@ -68,16 +70,27 @@ function [A,S,errors]=nnsc_and_log(data,dictsize,maxiter,lambda) %removed two th
     S=X; %coeff   
     X=data; %data
     A=D; %dictionary
-    A_kmeans=A;
+%     A_kmeans=A;
     mu=0.05;
     
     eps=0.001;
     
     
 
+    it_count=0;
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Main loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    for it_count=1:maxiter
+    Err=norm(data-A*S,'fro')+lambda*sum(log(abs(S(:))+eps));
+%     Lasterr=0;
+%     while(abs(Err-Lasterr)>Thresh*abs(Lasterr) && it_count<50)
 
+      while(it_count<20)
+        
+        Err
+        it_count
+        
+%         Lasterr=Err;
+        it_count=it_count+1;
+        
         '-----------------------------------';
 
         fro_norm=norm(X-A*S,'fro');
@@ -87,7 +100,7 @@ function [A,S,errors]=nnsc_and_log(data,dictsize,maxiter,lambda) %removed two th
         errors(1,it_count)=curr_error;
 
         Aprev=A;
-        A;
+        
         %Sprev=S;
         
         A=A-mu*(A*S-X)*S';
@@ -111,38 +124,67 @@ function [A,S,errors]=nnsc_and_log(data,dictsize,maxiter,lambda) %removed two th
         
 %         for ci=1:10
 
-        it_count
+        setGlobalD_newt(A)
+        for cols=1:size(S,2)
+            W=1./(S(:,cols)+eps);
+            setGlobalWt(W)
+            setGlobaly(data(:,cols))
 
-            Sn=S;
-            for cols=1:size(S,2)
-%                 for ii=1:10
+            x0=ones(size(S(:,cols)))';
+            x0=[x0 ones(size(S(:,cols)))'];
+            
+            options = optimoptions(@fmincon,'Algorithm','interior-point');
+            [x,~]=fmincon(@f,x0,[],[],[],[],-Inf,+Inf,@c,options);
+            'returned'
+            pause
+            S(:,cols)=x(1,1:size(S(:,cols),2))';
+        end
+       
 
-                ii=1;
-                W=diag(ones(size(S(:,cols))));
-                err=norm(data(:,cols)-A*W*S(:,cols),'fro')+lambda*sum(log(abs(S(:,cols))+eps));
-                lasterr=0;
-                while(abs(err-lasterr)>thresh*lasterr && ii<150)
-                    lasterr=err;
-                    W=diag(S(:,cols)+eps);
-                    An=A*W;
-                    S(:,cols)=(S(:,cols).*(An'*X(:,cols)))./((An'*An)*S(:,cols)+lambda);
-                    err=norm(data(:,cols)-A*W*S(:,cols),'fro')+lambda*sum(log(abs(S(:,cols))+eps));
-%                     norm(X-An*S,'fro')
-%                     S(:,cols)
-                    ii=ii+1;
-                end
-                
-%                norm(data(:,cols)-A*W*S(:,cols),'fro')
+       
+
+%             Sn=S;
+%             for cols=1:size(S,2)
+% %                 for ii=1:10
+% 
+%                 ii=1;
+%                 W=diag(ones(size(S(:,cols))));
+%                 err=norm(data(:,cols)-A*W*S(:,cols),'fro')+lambda*sum(log(abs(S(:,cols))+eps));
+%                 lasterr=0;
+% %                 while(abs(err-lasterr)>thresh*lasterr && ii<150)
+%                   while(ii<150)
+%                       
+%                     lasterr=err;
+%                     W=diag(S(:,cols)+eps);
+%                     An=A*W;
+%                     
+%                     for si=1:100
+%                         S(:,cols)=(S(:,cols).*(An'*X(:,cols)))./((An'*An)*S(:,cols)+lambda);
+%                     end
+%                     
+%                     err=norm(data(:,cols)-An*S(:,cols),'fro')+lambda*sum(log(abs(S(:,cols))+eps));
+%                     
+%                     'nn'
+%                     err
+%                     ii=ii+1;
+%                 end
+%                 
+%                 'done'
 %                 pause
-                Sn(:,cols)=W*S(:,cols);
-            end
-            S=Sn;
+%                 
+%                 
+% %                norm(data(:,cols)-A*W*S(:,cols),'fro')
+% %                 pause
+%                 Sn(:,cols)=W*S(:,cols);
+%             end
+%             S=Sn;
             
 %          end
 %         S(:,1:10)
 %         pause
         
-        mu=1.2*mu;       
+        mu=1.2*mu;  
+        Err=norm(data-A*S,'fro')+lambda*sum(log(abs(S(:))+eps));
      
     end  
     %subplot(1,2,1), display_dictionary(initA,p,numDisplay,size(initA,2));
@@ -150,6 +192,80 @@ function [A,S,errors]=nnsc_and_log(data,dictsize,maxiter,lambda) %removed two th
       
     errors=errors(1:it_count);
   
+end
+
+
+function fans = f(x)
+    tempW=getGlobalWt();
+    fans = tempW'*x(1,size(x,2)/2+1:end)';
+end
+
+function [cans,ceq] = c(x)
+
+    tempD=getGlobalD_newt();
+    tempy=getGlobaly;
+    eps=16000;
+    myX=x(1,1:size(x,2)/2)';
+    myU=x(1,size(x,2)/2+1:end)';
+    
+%     (tempy-tempD*myX)'*(tempy-tempD*myX)
+    
+    
+    cans=(tempy-tempD*myX)'*(tempy-tempD*myX)-eps;
+    cans2=myX-myU;
+    cans3=-myX-myU;
+    cans4=-myX;
+    
+    
+    ceq=0;
+    cans=[cans cans2' cans3' cans4'];
+%     cans(1,1)
+    (tempy-tempD*myX)'*(tempy-tempD*myX)
+    cans(1,1)
+    '-------------'
+    if cans(1,1)<=0
+        'paused'
+        cans
+        pause
+    end
+    
+     if cans<=zeros(size(cans))
+        'second paused'
+        pause
+    end
+    
+end
+
+
+
+function setGlobalD_newt(val)
+    global D_newt
+    D_newt = val;
+end
+
+function r = getGlobalD_newt
+    global D_newt
+    r = D_newt;
+end
+
+function setGlobaly(val)
+    global y
+    y = val;
+end
+
+function r = getGlobaly
+    global y
+    r = y;
+end
+
+function setGlobalWt(val)
+    global Wt
+    Wt = val;
+end
+
+function r = getGlobalWt
+    global Wt
+    r = Wt;
 end
 
 
